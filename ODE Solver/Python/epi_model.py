@@ -29,7 +29,7 @@ solved = solve_ivp(derivatives, t_span, y0, method = 'RK45', dense_output = True
 
 #plotting 
 t_plot = np.linspace(0, 100, 1000)
-y_plot = solved.sol(t_plot) #sol is the function
+y_plot = sol.solved(t_plot)
 S_plot = y_plot[0]
 I_plot = y_plot[1]
 R_plot = y_plot[2]
