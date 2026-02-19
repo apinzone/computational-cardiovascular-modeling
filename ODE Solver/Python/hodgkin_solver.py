@@ -3,12 +3,12 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
 #Define Derivative Function
-def derivatives(t, y):
+def derivatives(t, y, params):
     #Get state variables from initial array
-    V = y[0] #get V from y0 (passed into function)
-    m = y[1] #get m from y0 (passed into function)
-    h = y[2] #get h from y0
-    n = y[3] #get n from y0
+    V, m, h, n = y  # get all state variables at once instead of one at a time
+
+    #unpack parameters from array
+    Cm, gNa, gK, gL, ENa, EK, EL, I_ext = params
 
     #calculate currents and gates 
     INa = gNa * m**3 * h * (V - ENa)
@@ -30,23 +30,16 @@ def derivatives(t, y):
     return [dVdt, dmdt, dhdt, dndt]
 
 #Parameters (constants)
-Cm = 1.0 #membrane capacitance
-gNa = 120 #max sodium conductance
-gK = 36 #max potassium conductance
-gL = 0.3 #leak conductance
-ENa = 50 #sodium reversal
-EK = -77.0 #potassium reversal
-EL = -54.4 #leak reversal
-I_ext = 10 #Ext stimulus current
+base_params = [1.0 , 120, 36, 0.3, 50, -77, -54.4, 10]
+                #Cm , gNa, gK, gL, ENa, EK, EL, I_ext
 
-#Time Span 
+#Initial Conditions Array (y0) and Time Span
+y0 = [-65.0,0.05, 0.6, 0.32] # V, m ,h, n
 t_span = [0, 50]
 
-#Initial Conditions Array (y0)
-y0 = [-65.0,0.05, 0.6, 0.32] # V, m ,h, n
-
 #CALL SOLVER
-solved = solve_ivp(derivatives, t_span, y0, method = 'BDF', dense_output = True)
+solved = solve_ivp(derivatives, t_span, y0, args = (base_params,), 
+method = 'BDF', dense_output = True)
 
 #PLOT IT
 t_plot = np.linspace(0, 50, 5000)
