@@ -4,12 +4,12 @@ import matplotlib.pyplot as plt
 
 #McSharry Dynamical Model
 #Define Equations 
-def derivatives(t, y):
+def derivatives(t, y, omega):
     #obtain state variables
     x, y_var, z = y
     #define relevant parameters 
     alpha = 1 - np.sqrt(x**2 + y_var**2)
-    omega = (2 * np.pi) #constant at 60 bpm, no peak detection 
+    # omega = (2 * np.pi) #constant at 60 bpm, no peak detection 
     #current angle on circle
     theta = np.arctan2(y_var, x)
     #parameters for P, Q, R, S, T
@@ -32,22 +32,50 @@ def derivatives(t, y):
     #return derivatives as a single array
     return[x_dot, y_dot, z_dot]
 
-
+#
 
 #Define initial conditions array and t_span
 y0 = [1, 0, 0] #x, y_var, z
-t_span = [0, 300]
+t_span = [0, 15]
 
-#Call Solver 
-solutions = solve_ivp(derivatives, t_span, y0, method = 'BDF', dense_output = True)
-t_plot = np.linspace(1.5, 300, 30000)
-y_plot = solutions.sol(t_plot)
-x_plot = y_plot[0]
-y_var_plot = y_plot[1]
-z_plot = y_plot[2]
+#Varied parameters omega
+#create range of omega values 
+omega_values = np.linspace(np.pi, np.pi * 4, 20)
 
-#Plot Generated ECG (Z)
-plt.plot(t_plot, z_plot)
-plt.xlabel('Time (s)')
-plt.ylabel('ECG (mV)')
+#array for storage
+z_array = [] 
+
+#Loop over each omega value 
+for omega in omega_values:
+    #run simulation
+    solutions = solve_ivp(derivatives, t_span, y0, 
+    args = (omega,), method = 'BDF', dense_output = True)
+    #z trace
+    z = solutions.y[2, :]
+    #measure QRS amplitude
+    qrs_amp = np.max(z) - np.min(z)
+    #store appended array
+    z_array.append(qrs_amp)
+
+# #Call Solver 
+# solutions = solve_ivp(derivatives, t_span, y0, method = 'BDF', dense_output = True)
+# t_plot = np.linspace(1.5, 300, 30000)
+# y_plot = solutions.sol(t_plot)
+# x_plot = y_plot[0]
+# y_var_plot = y_plot[1]
+# z_plot = y_plot[2]
+
+plt.figure()
+plt.plot(omega_values, z_array, 'o-')
+plt.xlabel('Omega (rad/s)')
+plt.ylabel('QRS Amplitude (mV)')
+plt.title('Heart Rate vs QRS Amplitude')
+plt.grid(True)
 plt.show()
+
+# #Plot Generated ECG (Z)
+# plt.figure()
+# plt.plot(t_plot, z_plot)
+# plt.xlabel('Time (s)')
+# plt.ylabel('ECG (mV)')
+# plt.show()
