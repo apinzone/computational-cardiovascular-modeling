@@ -24,16 +24,16 @@ def derivatives(t, y, p):
     w = y[3]
     v = y[4]
     #compute derivatives
-    dxdt = (1/epsilon_1) * (q * y_var - x *y_var + x (1-x))
+    dxdt = (1/epsilon_1) * (q * y_var - x *y_var + x * (1-x))
     dydt = (1/epsilon_2) * (-q * y_var - x *y_var + f * z)
     dzdt = x -z 
     dwdt = -k_1 * w + k_2 * x - k_3 * w * x
-    dvdt = k_4 * w * y - k_5 * v
+    dvdt = k_4 * w * y_var - k_5 * v
     #return solution
     return [dxdt, dydt, dzdt, dwdt, dvdt]
 
 #parameters [epsilon_1, epsilon_2, q, f, k1, k2, k3, k4, k5]
-pars = [0.04, 1.0, 0.002, 1.6, 0.1, 0.2, 0.05, 0.3, 0.15]
+pars = [0.04, 1.0, 0.002, 1.0, 0.1, 0.2, 0.05, 0.3, 0.15]
 
 #initial conditions [x, y_var, z, w, v]
 y0 = [0.5, 0.1, 0.2, 0, 0]
