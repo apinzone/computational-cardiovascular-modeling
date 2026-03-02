@@ -8,7 +8,7 @@ base_pars = [2.5, 1, 2] ; %alpha, beta, n
 %Initial conditions and timespan
 y0_B_high = [0.5, 3.0] ;
 y0_A_high = [3.0, 0.5] ;
-y0 = [1.5, 1.5] ;
+y0 = [1.8, 1.8] ;
 t_span = [0 , 50] ; 
 
 %Solver Call Basic (Three Different y0) 
@@ -57,6 +57,8 @@ bifurcation_A_array_B_high = zeros(size(alpha_range)) ;
 bifurcation_B_array_B_high = zeros(size(alpha_range)) ;
 bifurcation_A_array_A_high = zeros(size(alpha_range)) ;
 bifurcation_B_array_A_high = zeros(size(alpha_range)) ;
+bifurcation_A_symmetric = zeros(size(alpha_range)) ;
+bifurcation_B_symmetric = zeros(size(alpha_range)) ;
 
 for i = 1:length(alpha_range)
     pars = [alpha_range(i), 1, 2] ; 
@@ -64,6 +66,8 @@ for i = 1:length(alpha_range)
     [t5, y5] = ode15s(@derivatives, t_span, y0_B_high, [], pars) ;
     %A high sim for param sweep alpha
     [t6, y6] = ode15s(@derivatives, t_span, y0_A_high, [], pars) ;
+    %symmetric
+    [t7, y7] = ode15s(@derivatives, t_span, y0, [], pars);  % y0 = [1.5, 1.5]
     %Get final values for B high simulations
     A_column_B_high = y5(:, 1) ;
     bifurcation_A_array_B_high(i) = A_column_B_high(end) ;
@@ -73,7 +77,10 @@ for i = 1:length(alpha_range)
     A_column_A_high = y6(:, 1) ;
     bifurcation_A_array_A_high(i) = A_column_A_high(end) ;
     B_column_A_high = y6(:, 2) ;
+    %get final values 
     bifurcation_B_array_A_high(i) = B_column_A_high(end) ;
+    bifurcation_A_symmetric(i) = y7(end, 1);
+    bifurcation_B_symmetric(i) = y7(end, 2);
 end
 
 %Plot alpha bifurcation 
@@ -84,8 +91,10 @@ plot(alpha_range, bifurcation_A_array_B_high, 'Color', [1, 0, 0, 0.7], 'LineWidt
 plot(alpha_range, bifurcation_A_array_A_high, 'Color', [0, 0, 1, 0.7], 'LineWidth', 2.5, 'LineStyle', '--');  % A at A-high (blue dashed)
 plot(alpha_range, bifurcation_B_array_B_high, 'Color', [0, 0.8, 0, 0.7], 'LineWidth', 2.5, 'LineStyle', '-'); % B at B-high (green solid)
 plot(alpha_range, bifurcation_B_array_A_high, 'Color', [0, 0, 0, 0.7], 'LineWidth', 2.5, 'LineStyle', '--');  % B at A-high (black dashed)
+plot(alpha_range, bifurcation_A_symmetric, 'Color', [0.5, 0, 0.5, 0.8], 'LineWidth', 3, 'LineStyle', ':');
+plot(alpha_range, bifurcation_B_symmetric, 'Color', [0, 0.5, 0.5, 0.8], 'LineWidth', 3, 'LineStyle', ':');
 legend('A with high initial B', 'A with high initial A', ...
-    'B with high initial B', 'B with high initial A')
+    'B with high initial B', 'B with high initial A', 'A symmetric', 'B symmetric')
 xlabel('Alpha Value')
 ylabel('Protein Concentration') 
 
