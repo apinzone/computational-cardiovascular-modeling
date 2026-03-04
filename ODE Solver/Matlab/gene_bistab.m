@@ -6,10 +6,51 @@ alpha_range = linspace(1, 4, 30);
 base_pars = [2.5, 1, 2] ; %alpha, beta, n 
 
 %Initial conditions and timespan
-y0_B_high = [0.5, 3.0] ;
+y0_B_high = [0.5, 3.0] ; 
 y0_A_high = [3.0, 0.5] ;
 y0 = [1.8, 1.8] ;
 t_span = [0 , 50] ; 
+
+%separate conditions for Rate Balance
+A_range = 0:0.01:4 ; 
+B_range_null = 0:0.01:4 ; 
+B_fixed = 1.5 ; 
+n = 2 ;
+alpha = 2.5 ; 
+beta = 1 ;
+
+%Calculate Forward Rate 
+FR = alpha / (1 + B_fixed.^n) ; 
+FR_array = zeros(size(A_range)) ;
+FR_array(:) = FR ;
+BR = A_range ; 
+[dummymin, idx] = min(abs(BR - FR)) ;
+Cross = BR(idx) ; 
+
+%Plot FR vs BR intersection 
+figure 
+hold on 
+plot(A_range, FR_array, '-b') ; 
+plot(A_range, A_range, '-r') ; 
+plot(Cross, FR_array(idx), '-bo') ; 
+legend('Forward Rate', 'Backward Rate')
+
+figure 
+hold on
+%Try varying B
+B_range = 0.5:0.5:3 ; 
+FR_array_B_sweep = zeros(size(B_range)) ;
+plot(A_range, A_range)
+for i = 1:length(B_range)
+    B_fixed = B_range(i) ;
+    FR  = alpha / (1 + B_fixed.^n) ; 
+    FR_array = ones(size(A_range)) * FR ;
+    plot(A_range, FR_array)
+
+    [dummymin, idx] = min(abs(FR_array - A_range)) ;
+    Cross = A_range(idx) ; 
+    plot(Cross, A_range(idx), 'o', 'MarkerSize', 10)
+end
 
 %Solver Call Basic (Three Different y0) 
 [t1, y1] = ode15s(@derivatives, t_span, y0_B_high , [], base_pars) ;
@@ -41,6 +82,30 @@ for i = 1:length(n_range)
     B_column = y4(:, 2) ;
     B_final_array(i) = B_column(end) ;
 end
+
+%Plot Nullclines
+%dAdt = alpha / (1 + B.^n) - A ;%dA/Dt
+%dBdt = alpha / (1 + A.^n) - B ; %dBdt
+
+%A equal to 0 and solve for A in loop
+A_null_array = zeros(size(B_range_null)) ;
+B_null_array = zeros(size(A_range)) ; 
+for i = 1:length(B_range_null) 
+    A_null_array(i) = alpha / (1 + B_range_null(i).^n) ;
+end 
+
+for i = 1:length(A_range) 
+    B_null_array(i) = alpha / (1 + A_range(i)^n) ;
+end
+
+%Plot nullclines
+figure 
+hold on
+plot(A_null_array, B_range_null, '-b')
+plot(A_range, B_null_array, '-r')
+legend('A nullcine', 'B nullcline')
+xlabel('A Concentration')
+ylabel('B Concentration')
 
 %Plot hill parameter sweep
 figure 
@@ -115,3 +180,5 @@ function output = derivatives(t, y, p)
     %return array of derivatives 
     output = derivs ; 
 end 
+
+drawnow
