@@ -1,0 +1,46 @@
+%Parameters and Initial Conditions
+y0 = [-65, -0.05, 0.6, 0.32] ; %V_0, m_0, h_0, n_0 
+t_span = [0, 100] ; %Run for 100s. 
+%Solver Call With Parameter Sweep
+for i = 1:length(i_app_range) 
+    %i_app, gNa, gK, gL, ENa, EK, EL, Cm
+    pars = [i_app_range(i), 120, 36, 0.3, 50, -77, -54.4, 1.0] ; 
+%Derivatives Function
+function output = derivatives(t, y, p) 
+    derivs = zeros(size(y)) ;
+
+    %unpack parameters
+    I_app = p(1) ;
+    gNa = p(2);
+    gK = p(3) ;
+    gL = p(4) ;
+    ENa = p(5) ;
+    EK = p(6) ;
+    EL = p(7) ;
+    Cm = p(8) ; 
+
+    %unpack state variables 
+    V = y(1) ;
+    m = y(2) ;
+    h = y(3) ;
+    n = y(4) ;
+
+    %Calculations for Rate Functions
+    alpha_m_v = 0.1 * (V + 40) / (1 - exp(-(V + 40)/10)) ;
+    beta_m_v = 4.0 * exp(-(V+65)/18) ;
+    alpha_h_v = 0.07 * exp(-(V+65)/20) ;
+    beta_h_v = 1 / (1 + exp(-(V+35)/10)) ;
+    alpha_n_v = 0.01 * (V + 55) / (1 - exp(-(V+55)/10)) ;
+    beta_n_v = 0.125 * exp(-(V + 65)/80) ; 
+
+    %Calculations for Currents 
+    INa = gNa * m.^3 
+
+    %compute derivatives and append deriv array
+    derivs(1) = (1/Cm) * (I_app - INa - IK - IL) ; %dV/dt
+    derivs(2) = %dm/dt
+    derivs(3) = %dh/dt
+    derivs(4) = %dn/dt
+
+   
+end
