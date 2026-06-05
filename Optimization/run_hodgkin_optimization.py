@@ -93,7 +93,15 @@ def evaluate(individual):
 #Register GA Operators
 toolbox.register("evaluate", evaluate)
 toolbox.register("mate", tools.cxBlend, alpha = 0.5)
-toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 0.5, indpb = 0.2)
+def mutate_individual(individual):
+    individual[0] += random.gauss(0, 10)    # gNa
+    individual[1] += random.gauss(0, 3)     # gK
+    individual[2] += random.gauss(0, 0.02)  # gL
+    individual[0] = np.clip(individual[0], 60, 180)
+    individual[1] = np.clip(individual[1], 18, 54)
+    individual[2] = np.clip(individual[2], 0.15, 0.45)
+    return individual,
+toolbox.register("mutate", mutate_individual)
 toolbox.register("select", tools.selTournament, tournsize = 3)
 
 #Run GA
@@ -133,5 +141,15 @@ plt.plot(t_experimental, V_recovered, 'r--', label='GA Recovered', linewidth=2)
 plt.xlabel('Time (ms)')
 plt.ylabel('Voltage (mV)')
 plt.title('HH Parameter Recovery with DEAP')
+plt.legend()
+
+# Convergence plot
+min_fits = log.select("min")
+plt.figure()
+plt.plot(min_fits, label='Best MSE')
+plt.xlabel('Generation')
+plt.ylabel('MSE')
+plt.title('GA Convergence')
+plt.yscale('log')
 plt.legend()
 plt.show()
