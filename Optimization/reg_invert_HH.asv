@@ -1,0 +1,69 @@
+%Load Experimental Voltage Traces at both pacing frequencies 
+data = readmatrix('voltage_trace.csv') ;
+data2 = readmatrix('voltage_trace2.csv') ;
+t_experimental = data(:, 1) ;
+V_experimental = data(:, 2) ; 
+t_experimental2 = data2(:, 1) ;
+V_experimental2 = data2(:, 2) ;
+
+%Using Linear Regression for Inversion instead of GA 
+n_sims = 1000 ; 
+
+%Generate random params for currents 
+lb = [60, 18, 0.15] ; %gNa, gK, gL lower bounds
+ub = [180, 54, 0.45] ; %gNa, gK, gL upper bounds
+gNa_array = rand(n_sims, 1) * ((ub(1) - lb(1)) + lb(1)) * n_sims ; 
+gK_array = rand(n_sims, 1) * ((ub(2) - lb(2)) + lb(2)) who* n_sims ;
+gL_array = rand(n_sims, 1) * ((ub(3) - lb(3)) + lb(3)) * n_sims ;
+
+%Prellaocate Storage 
+biomarkers_matrix = zeros(, 1000) ;
+pars_matrix = zeros(n_sims, 3) ; 
+
+%Initial Conditions for HH Model
+t_span = [0, 100] ; %Run for 100 seconds 
+y0 = [-65, 0.05, 0.6, 0.32] ; %V_0, m_0, h_0, n_0 
+
+for i = 1:n_sims 
+    pars = [10, gNa_array(i), gK_array(i), gL_array(i), 50, -77, -54, 4, 1.0] ;
+    [t,y] = ode15s(@derivatives, t_span, y0, [], pars) ;
+    V = y(:,1) ;
+    %Extract biomarkers 
+
+end
+
+%Derivatives Function for HH 
+function output = derivatives(t, y, p) 
+    derivs = zeros(size(y)) ;
+    %Unpack parameters 
+    I_app = p(1) ;
+    gNa = p(2) ;
+    gK = p(3) ;
+    gL = p(4) ; 
+    ENa = p(5) ; 
+    EK = p(6) ;
+    EL = p(7) ;
+    Cm = p(8) ;
+    %Unpack state variables
+    V = y(1) ;
+    m = y(2) ; 
+    h = y(3) ; 
+    n = y(4) ;
+    %calculations for rate functions
+    alpha_m_V = 0.1 * (V + 40) / (1 - exp(-(V + 40)/10)) ;
+    beta_m_V = 4.0 * exp(-(V+65)/18) ;
+    alpha_h_V = 0.07 * exp(-(V+65)/20) ;
+    beta_h_V = 1 / (1 + exp(-(V+35)/10)) ;
+    alpha_n_V = 0.01 * (V + 55) / (1 - exp(-(V+55)/10)) ;
+    beta_n_V = 0.125 * exp(-(V + 65)/80) ;
+    %calculations for currents
+    INa = gNa * m.^3 * h * (V - ENa) ;
+    IK = gK * n.^4 * (V - EK) ;
+    IL = gL * (V - EL) ;
+    %compute derivatives
+    derivs(1) = (1/Cm) * (I_app - INa - IK - IL) ;
+    derivs(2) = alpha_m_V * (1 - m) - beta_m_V * m ;
+    derivs(3) = alpha_h_V * (1 - h) - beta_h_V * h ;
+    derivs(4) = alpha_n_V * (1 - n) - beta_n_V * n ;
+    output = derivs ;
+end
