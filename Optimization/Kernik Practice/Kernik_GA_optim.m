@@ -1,0 +1,101 @@
+load ICs_baseline
+load baseline_parameter_inputs
+
+%Load Experimental Voltage Traces generated from Kernik Model at both pacing frequencies 
+%CL of 800 and 500 
+data = readmatrix('Kernik_values_800.csv') ;
+data2 = readmatrix('Kernik_values_500.csv') ;
+t_experimental_1 = data(:, 1) ;
+V_experimental_1 = data(:, 2) ; 
+Ca_experimental_1 = data(:, 3) ; 
+t_experimental_2 = data2(:, 1) ;
+V_experimental_2 = data2(:, 2) ; 
+Ca_experimental_2 = data2(:, 3) ; 
+
+%Initial Conditions for HH Model
+t_span = [0, 60000] ; %Run for 60 seconds
+
+%Set bounds and options
+lb = [0.5, 0.5, 0.5] ; %IKr, ICaL, SERCA Lower Bounds
+ub = [1.5, 1.5, 1.5] ; %IKr, ICaL, SERCA Uppoer Bounds
+options = optimoptions('ga', ...
+    'PopulationSize', 50, ...   
+    'MaxGenerations', 50, ...    
+    'Display', 'iter') ;
+
+%Function for extra arguments
+fitnessfcn = @(p) evaluate(p, baseline_parameter_inputs, Y_init, t_span,...
+t_experimental_1, V_experimental_1, Ca_experimental_1, ...
+t_experimental_2, V_experimental_2, Ca_experimental_2) ;
+
+%Call GA 
+[best_params, best_MSE] = ga(fitnessfcn, 3, ...
+    [], [], [], [], lb, ub, [], options); 
+
+%Display Results
+fprintf('\nTrue:  IKr=0.7, ICaL=1.2, SERCA=0.8\n') ;
+fprintf('Found: IKr=%.4f, ICaL=%.4f, SERCA=%.4f\n', ...
+        best_params(1), best_params(2), best_params(3)) ;
+fprintf('Final MSE: %.6f\n', best_MSE) ;
+
+%Plot recovered vs. experimental trace
+pars_best = baseline_parameter_inputs ;
+pars_best(2)  = best_params(1) ;  % IKr
+pars_best(5)  = best_params(2) ;  % ICaL
+pars_best(10) = best_params(3) ;  % SERCA
+
+options_ODE = odeset('MaxStep',1,'InitialStep',2e-2) ;
+[t_best, Y_best] = ode15s(@ipsc_function, t_span, ...
+                          Y_init, options_ODE, pars_best) ;
+
+figure
+subplot(2,1,1)
+hold on
+plot(t_experimental_1, V_experimental_1, '-b', 'LineWidth', 2)
+plot(t_best, Y_best(:,1), '--r', 'LineWidth', 2)
+xlabel('Time (ms)') ; ylabel('Voltage (mV)')
+legend('Experimental', 'Recovered')
+
+subplot(2,1,2)
+hold on
+plot(t_experimental_1, Ca_experimental_1, '-b', 'LineWidth', 2)
+plot(t_best, Y_best(:,3), '--r', 'LineWidth', 2)
+xlabel('Time (ms)') ; ylabel('Calcium (mM)')
+legend('Experimental', 'Recovered')
+
+%MSE Function for Simulated Protocols 
+function MSE = evaluate(scales, base_params, Y_init, t_span, ...
+    t_exp_1, V_exp_1, Ca_exp_1, t_exp_2, V_exp_2, Ca_exp_2)
+    %Unpack scales
+    IKr_scale = scales(1) ;
+    ICaL_scale = scales(2) ; 
+    SERCA_scale = scales(3) ;
+    %Protocol 1 - CL of 800
+    pars = base_params ;
+    pars(2)  = IKr_scale ;   
+    pars(5)  = ICaL_scale ;
+    pars(10) = SERCA_scale ;
+    options_ODE = odeset('MaxStep',1,'InitialStep',2e-2) ;
+    try
+        [t1, y1] = ode15s(@ipsc_function, t_span, Y_init, options_ODE, pars) ;
+        V_sim_1 = interp1(t1, y1(:,1), t_exp_1);
+        Ca_sim_1 = interp1(t1, y1(:,3), t_exp_1);
+        MSE_1_V = mean((V_sim_1 - V_exp_1).^2) / var(V_exp_1) ;
+        MSE_1_Ca = mean((Ca_sim_1 - Ca_exp_1).^2) / var(Ca_exp_1) ;
+    catch
+        MSE = 999999 ; return ;
+    end
+    %Protocol 2 - CL of 500
+    try
+        options_ODE = odeset('MaxStep',1,'InitialStep',2e-2) ;
+        [t2, y2] = ode15s(@ipsc_function_500, t_span, Y_init, options_ODE, pars) ;
+        V_sim_2 = interp1(t2, y2(:,1), t_exp_2);
+        Ca_sim_2 = interp1(t2, y2(:,3), t_exp_2);
+        MSE_2_V = mean((V_sim_2 - V_exp_2).^2) / var(V_exp_2) ; 
+        MSE_2_Ca = mean((Ca_sim_2 - Ca_exp_2).^2) / var(Ca_exp_2) ; 
+    catch
+        MSE = 999999 ; return ;
+    end
+    %Return MSE 
+    MSE = MSE_1_V + MSE_1_Ca + MSE_2_V + MSE_2_Ca ;
+end
