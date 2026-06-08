@@ -56,7 +56,7 @@ voltageclamp=model_parameter_inputs(85); %square pulses if =1
 %%  Constants for flag protocols:
 
 % for stim:
-cyclelength=800; %1000ms = 1hz beating
+cyclelength=1000; %1000ms = 1hz beating
 i_stim_Amplitude = 3;   % pA/pF (in stim_mode)
 i_stim_End = 10e3;   % milisecond (in stim_mode)
 i_stim_PulseDuration = 5;   % milisecond (in stim_mode)

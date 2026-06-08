@@ -3,32 +3,25 @@ close all; clear; clc
 
 load ICs_baseline
 load baseline_parameter_inputs
-baseline_parameter_inputs(1)  = 1.1 ;  % IK1  
 baseline_parameter_inputs(2)  = 0.7 ;  % IKr  -30%
 baseline_parameter_inputs(5)  = 1.2 ;  % ICaL +20%
-baseline_parameter_inputs(7)  = 0.9 ;  % INa 
 baseline_parameter_inputs(10) = 0.8 ;  % SERCA -20%
-
+baseline_parameter_inputs(7)  = 0.9 ;  % INa 
+baseline_parameter_inputs(1)  = 1.1 ;  % IK1  
 
 %% Run iPSC_function
 options = odeset('MaxStep',1,'InitialStep',2e-2);
-run_time=10.6e4;
+run_time=6e4;
 [Time, values] = ode15s(@ipsc_function,[0, run_time],Y_init, options, baseline_parameter_inputs);
-[Time2, values2] = ode15s(@ipsc_function_2000,[0, run_time],Y_init, options, baseline_parameter_inputs);
-last_6_idx = Time >= 10e4 ; 
-last_6_idx_t2 = Time2 >= 10e4 ;
-time_trimmed = Time(last_6_idx) ; 
-time_trimmed_2 = Time2(last_6_idx_t2) ; 
-Cai=values(last_6_idx,3);
-Vm=values(last_6_idx,1);
-Cai2=values2(last_6_idx_t2,3);
-Vm2=values2(last_6_idx_t2,1);
+Cai=values(:,3);
+Vm=values(:,1);
+
 
 %Write Calcium and Voltage Time Series to File 
-values_table_1000 = table(time_trimmed, Vm, Cai) ;
-writetable(values_table_1000, 'Kernik_values_1000.csv')
-values_table_2000 = table(time_trimmed_2, Vm2, Cai2) ;
-writetable(values_table_2000, 'Kernik_values_2000.csv')
+values_table_800 = table(Time, Vm, Cai) ;
+writetable(values_table, 'Kernik_values_800.csv')
+values_table_500 = table(Time, Vm, Cai) ;
+writetable(values_table, 'Kernik_values_500.csv')
 
 %% Calculate select current traces:
 INaCa = zeros(size(Time));
