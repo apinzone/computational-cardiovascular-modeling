@@ -6,11 +6,11 @@ load baseline_parameter_inputs
 baseline_parameter_inputs(2)  = 0.7 ;   % IKr
 baseline_parameter_inputs(5)  = 1.2 ;   % ICaL
 baseline_parameter_inputs(8)  = 1.3 ;   % If
-baseline_parameter_inputs(9)  = 0.5 ;   % NCX
-baseline_parameter_inputs(10) = 0.5 ;   % SERCA
-baseline_parameter_inputs(11) = 1.5 ;   % RyR
-baseline_parameter_inputs(15) = 1.3 ;   % IbCa
-baseline_parameter_inputs(16) = 0.6 ;   % PMCA
+baseline_parameter_inputs(9)  = 0.7 ;   % NCX
+baseline_parameter_inputs(10) = 0.7 ;   % SERCA
+baseline_parameter_inputs(11) = 1.2 ;   % RyR
+baseline_parameter_inputs(15) = 1.1 ;   % IbCa
+baseline_parameter_inputs(16) = 0.8 ;   % PMCA
 
 %% Run iPSC_function
 options = odeset('MaxStep',1,'InitialStep',2e-2);
@@ -48,7 +48,7 @@ ca_analysis( Time, Iup, INaCa, IpCa, Cai )
 
 %% Figure 11A: action potential trace for baseline model 
 figure,set(gcf,'color','w')
-plot(Time, Vm,'Color', [.8 0 .18]);
+plot(time_trimmed, Vm,'Color', [.8 0 .18]);
 set(gca,'box','off','tickdir','out')
 ylabel('Voltage (mV)');
 xlabel('Time (ms)')

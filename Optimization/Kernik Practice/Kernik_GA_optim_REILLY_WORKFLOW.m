@@ -22,9 +22,10 @@ lb = exp(-1) * ones(1,16) ;
 ub = exp(1)  * ones(1,16) ;
 options = optimoptions('ga', ...
     'PopulationSize', 300, ...   
-    'MaxGenerations', 50, ...    
+    'MaxGenerations', 100, ...    
     'EliteCount', 5, ...
     'CrossoverFraction', 0.8, ...
+    'MaxStallGenerations', 30, ...
     'UseParallel', true, ...
     'Display', 'iter') ;
 
@@ -46,11 +47,11 @@ true_scales = ones(1,16) ;
 true_scales(2)  = 0.7 ;
 true_scales(5)  = 1.2 ;
 true_scales(8)  = 1.3 ;
-true_scales(9)  = 0.5 ;
-true_scales(10) = 0.5 ;
-true_scales(11) = 1.5 ;
-true_scales(15) = 1.3 ;
-true_scales(16) = 0.6 ;
+true_scales(9)  = 0.7 ;
+true_scales(10) = 0.7 ;
+true_scales(11) = 1.2 ;
+true_scales(15) = 1.1 ;
+true_scales(16) = 0.8 ;
 
 fprintf('\nParameter Recovery:\n') ;
 for i = 1:16
@@ -98,12 +99,13 @@ function SAD = evaluate(scales, base_params, Y_init, t_span, ...
         Ca_amp   = max(Ca_sim_1) - min(Ca_sim_1) ;
         Ca_diast = min(Ca_sim_1) ;
 
-        % Penalties
-        P_AP   = compute_penalty(AP_amp,   90,     125,    105,  600) ;
-        P_RMP  = compute_penalty(RMP,      -80,    -55,    -75,  600) ;
-        P_dVdt = compute_penalty(dVdtmax,  10,     150,    25,   600) ;
-        P_Ca   = compute_penalty(Ca_amp,   1.5e-4, 1e-3,   5e-4, 600) ;
-        P_Cd   = compute_penalty(Ca_diast, 1e-4,   3.5e-4, 2e-4, 600) ;
+      
+        % Protocol 1 penalties:
+        P_AP   = compute_penalty(AP_amp,   87,    131,   109,  60) ;
+        P_RMP  = compute_penalty(RMP,      -88,   -59,   -74,  60) ;
+        P_dVdt = compute_penalty(dVdtmax,  5,     150,   24,   60) ;
+        P_Ca   = compute_penalty(Ca_amp,   3e-4,  6e-4,  4.5e-4, 60) ;
+        P_Cd   = compute_penalty(Ca_diast, 8e-5,  1.6e-4,1.2e-4, 60) ;
         P_total = P_AP + P_RMP + P_dVdt + P_Ca + P_Cd ;
 
         % Normalize simulation
@@ -132,11 +134,11 @@ function SAD = evaluate(scales, base_params, Y_init, t_span, ...
         Ca_diast2 = min(Ca_sim_2) ;
 
         % Penalties
-        P_AP_2   = compute_penalty(AP_amp2,   90,     125,    105,  600) ;
-        P_RMP_2  = compute_penalty(RMP2,      -80,    -55,    -75,  600) ;
-        P_dVdt_2 = compute_penalty(dVdtmax2,  10,     150,    25,   600) ;
-        P_Ca_2   = compute_penalty(Ca_amp2,   1.5e-4, 1e-3,   5e-4, 600) ;
-        P_Cd_2   = compute_penalty(Ca_diast2, 1e-4,   3.5e-4, 2e-4, 600) ;
+        P_AP_2  = compute_penalty(AP_amp2, 87, 131, 109, 60) ;
+        P_RMP_2 = compute_penalty(RMP2, -88,-59, -74, 60) ;
+        P_dVdt_2 = compute_penalty(dVdtmax2, 5,     150,   24,   60) ;
+        P_Ca_2  = compute_penalty(Ca_amp2,   3e-4,  6e-4,  4.5e-4, 60) ;
+        P_Cd_2  = compute_penalty(Ca_diast2, 8e-5,  1.6e-4,1.2e-4, 60) ;
         P_total_2 = P_AP_2 + P_RMP_2 + P_dVdt_2 + P_Ca_2 + P_Cd_2 ;
         % Normalize simulation
         Ca_sim_norm_2 = (Ca_sim_2 - min(Ca_sim_2)) / (max(Ca_sim_2) - min(Ca_sim_2)) ;
@@ -148,7 +150,7 @@ function SAD = evaluate(scales, base_params, Y_init, t_span, ...
         SAD = 999999 ; return ;
     end
 
-    lambda = 0.1 ;
+    lambda = 0.01 ;
     lasso_penalty = lambda * sum(abs(scales - 1)) ;
 
     %Return SAD 
