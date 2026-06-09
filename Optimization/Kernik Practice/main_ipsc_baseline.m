@@ -3,12 +3,14 @@ close all; clear; clc
 
 load ICs_baseline
 load baseline_parameter_inputs
-baseline_parameter_inputs(1)  = 1.1 ;  % IK1  
-baseline_parameter_inputs(2)  = 0.7 ;  % IKr  -30%
-baseline_parameter_inputs(5)  = 1.2 ;  % ICaL +20%
-baseline_parameter_inputs(7)  = 0.9 ;  % INa 
-baseline_parameter_inputs(10) = 0.8 ;  % SERCA -20%
-
+baseline_parameter_inputs(2)  = 0.7 ;   % IKr
+baseline_parameter_inputs(5)  = 1.2 ;   % ICaL
+baseline_parameter_inputs(8)  = 1.3 ;   % If
+baseline_parameter_inputs(9)  = 0.5 ;   % NCX
+baseline_parameter_inputs(10) = 0.5 ;   % SERCA
+baseline_parameter_inputs(11) = 1.5 ;   % RyR
+baseline_parameter_inputs(15) = 1.3 ;   % IbCa
+baseline_parameter_inputs(16) = 0.6 ;   % PMCA
 
 %% Run iPSC_function
 options = odeset('MaxStep',1,'InitialStep',2e-2);
