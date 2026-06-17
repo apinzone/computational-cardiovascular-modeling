@@ -18,8 +18,8 @@ Ca_experimental_2 = data2(:, 3) ;
 %Initial Conditions for Kernik
 t_span = [0, 10.6e4] ; %Run for 106 seconds
 %Set bounds and options
-lb = exp(-1) * ones(1,16) ;
-ub = exp(1)  * ones(1,16) ;
+lb = exp(-1) * ones(1,8) ;
+ub = exp(1)  * ones(1,8) ;
 options = optimoptions('ga', ...
     'PopulationSize', 300, ...   
     'MaxGenerations', 100, ...    
@@ -29,39 +29,56 @@ options = optimoptions('ga', ...
     'UseParallel', true, ...
     'Display', 'iter') ;
 
+%3 trials
+n_trials = 10;
+best_SAD_all = inf ; 
+
 %Function for extra arguments
 fitnessfcn = @(p) evaluate(p, baseline_parameter_inputs, Y_init, t_span,...
 t_experimental_1, Ca_experimental_1, ...
 t_experimental_2, Ca_experimental_2) ;
 
 %Call GA 
-[best_params, best_MSE] = ga(fitnessfcn, 16, ...
-    [], [], [], [], lb, ub, [], options); 
+for trial = 1:n_trials
+    rng(trial) ;
+    [params_trial, SAD_trial] = ga(fitnessfcn, 8, ...
+        [], [], [], [], lb, ub, [], options) ;
+    fprintf('Trial %d: SAD = %.4f\n', trial, SAD_trial) ;
+    
+    if SAD_trial < best_SAD_all
+        best_SAD_all = SAD_trial ;
+        best_params  = params_trial ;
+    end
+end
 
 %Display Results
-param_names = {'IK1','IKr','IKs','Ito','ICaL','ICaT','INa',...
-               'If','NCX','SERCA','RyR','Jleak','INaK',...
-               'IbNa','IbCa','IpCa'} ;
-
-true_scales = ones(1,16) ;
-true_scales(2)  = 0.7 ;
-true_scales(5)  = 1.2 ;
-true_scales(8)  = 1.3 ;
-true_scales(9)  = 0.7 ;
-true_scales(10) = 0.7 ;
-true_scales(11) = 1.2 ;
-true_scales(15) = 1.1 ;
-true_scales(16) = 0.8 ;
+param_names = {'IKr','ICaL','If','NCX','SERCA','RyR','IbCa','IpCa'} ;
+true_scales = ones(1,8) ;
+true_scales(1)  = 0.7 ;
+true_scales(2)  = 1.2 ;
+true_scales(3)  = 1.3 ;
+true_scales(4)  = 0.7 ;
+true_scales(5) = 0.7 ;
+true_scales(6) = 1.2 ;
+true_scales(7) = 1.1 ;
+true_scales(8) = 0.8 ;
 
 fprintf('\nParameter Recovery:\n') ;
-for i = 1:16
+for i = 1:8
     fprintf('%s: True=%.2f Found=%.4f\n', ...
             param_names{i}, true_scales(i), best_params(i)) ;
 end
 
 %Simulation
 pars_best = baseline_parameter_inputs ;
-pars_best(1:16) = best_params ;  
+pars_best(2)  = best_params(1) ;  % IKr
+pars_best(5)  = best_params(2) ;  % ICaL
+pars_best(8)  = best_params(3) ;  % If
+pars_best(9)  = best_params(4) ;  % NCX
+pars_best(10) = best_params(5) ;  % SERCA
+pars_best(11) = best_params(6) ;  % RyR
+pars_best(15) = best_params(7) ;  % IbCa
+pars_best(16) = best_params(8) ;  % PMCA
 
 options_ODE = odeset('MaxStep',1,'InitialStep',2e-2) ;
 [t_best, Y_best] = ode15s(@ipsc_function, t_span, ...
@@ -76,12 +93,22 @@ plot(t_best(last_6_best), Y_best(last_6_best,3), '--r', 'LineWidth', 2)
 xlabel('Time (ms)') ; ylabel('Calcium (mM)')
 legend('Experimental', 'Recovered')
 
+
+
+fprintf('Best trial SAD: %.4f\n', best_SAD_all) ;
 %SAD Function for Simulated Protocols 
 function SAD = evaluate(scales, base_params, Y_init, t_span, ...
     t_exp_1, Ca_exp_1, t_exp_2, Ca_exp_2)
     %Unpack scales
     pars = base_params ;
-    pars(1:16) = scales ;
+    pars(2)  = scales(1) ;  % IKr
+    pars(5)  = scales(2) ;  % ICaL
+    pars(8)  = scales(3) ;  % If
+    pars(9)  = scales(4) ;  % NCX
+    pars(10) = scales(5) ;  % SERCA
+    pars(11) = scales(6) ;  % RyR
+    pars(15) = scales(7) ;  % IbCa
+    pars(16) = scales(8) ;  % PMCA
     %Protocol 1 - CL of 800
     options_ODE = odeset('MaxStep',1,'InitialStep',2e-2) ;
     try
